@@ -15,6 +15,7 @@ class RegisterView(APIView):
     #methode de register
     def post(self, request, *args, **kwargs):
         serializer = RegisterSerializer(data=request.data)
+        print (serializer)
         if serializer.is_valid():
             user = serializer.save()
              # convert user data to json 
@@ -23,10 +24,10 @@ class RegisterView(APIView):
             tokens=serializer.get_tokens(user)
             return JsonResponse({'message': 'User registered successfully',
                              'user':user_data,
-                             'acess_token':tokens["access"],
+                             'access_token':tokens["access"],
                              'refresh':tokens["refresh"]
                              }, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # Vue de login
@@ -47,7 +48,7 @@ class LoginView(APIView):
             
             return Response({'message': 'User login successfully',
                              'user':user_data,
-                             'acess_token':tokens["access"],
+                             'access_token':tokens["access"],
                              'refresh':tokens["refresh"]
                              }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

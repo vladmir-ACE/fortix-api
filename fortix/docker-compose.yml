@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    environment:
+      DB_NAME: fortix
+      DB_USER: vlad
+      DB_PASSWORD: vlad
+      DB_HOST: db                  # Nom de service pour accéder à PostgreSQL
+      DB_PORT: 5432
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: fortix           # Nom de la base de données
+      POSTGRES_USER: vlad           # Utilisateur de la base de données
+      POSTGRES_PASSWORD: vlad       # Mot de passe de l'utilisateur
+    ports:
+      - "5432:5432"                 # Exposer le port de PostgreSQL
+    volumes:
+      - db_data:/var/lib/postgresql/data  # Volume pour persister les données
+
+volumes:
+  db_data:

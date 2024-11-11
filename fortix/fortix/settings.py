@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os, dotenv
+# dotenv.load_dotenv()
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -43,6 +46,7 @@ INSTALLED_APPS = [
     'subscription',
     'pronostic',
     'drf_yasg',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -53,6 +57,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'fortix.urls'
@@ -79,17 +84,32 @@ WSGI_APPLICATION = 'fortix.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'fortix',  # Remplace par le nom de ta base de données MySQL
-        'USER': 'root',            # Remplace par ton nom d'utilisateur MySQL
-        'PASSWORD': '',           # Remplace par ton mot de passe MySQL
-        'HOST': 'localhost',                  # Habituellement 'localhost' ou l'adresse IP du serveur MySQL
-        'PORT': '3306',    # Habituellement 3306 pour MySQL
-        
+    
+    #local
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME'),  # Remplace par le nom de ta base de données MySQL
+            'USER':  os.environ.get('DB_USER'),            # Remplace par ton nom d'utilisateur MySQL
+            'PASSWORD':os.environ.get('DB_PASSWORD'),           # Remplace par ton mot de passe MySQL
+            'HOST': os.environ.get('DB_HOST'),                 # Habituellement 'localhost' ou l'adresse IP du serveur MySQL
+            'PORT': os.environ.get('DB_PORT'), # Habituellement 3306 pour MySQL
+            
+        }
+    #prod 
+    #     'default': {
+    #     'ENGINE': 'django.db.backends.mysql',
+    #     'NAME': 'fortix',
+    #     'USER': 'vlad',  # Utiliser les valeurs définies dans le fichier .env
+    #     'PASSWORD': 'vladmirC4',
+    #     'HOST': 'db',  # Utiliser 'db' au lieu de 'localhost'
+    #     'PORT': '3306', 
+    # }
+    
+    
     }
-}
+
 
 
 # Password validation
@@ -127,6 +147,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -148,3 +170,4 @@ CINETPAY_API_KEY = '66451452366fc28f4aeb735.51671120'
 CINETPAY_SITE_ID = '5880827'
 
 ALLOWED_HOSTS = ['*']
+CORS_ALLOW_ALL_ORIGINS = True
