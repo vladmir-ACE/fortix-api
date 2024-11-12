@@ -23,3 +23,4 @@ ENTRYPOINT [ "sh","./entrypoint.sh" ]
 
 # Démarrer l'application Django après avoir attendu que MySQL soit prêt
 # CMD ["/bin/bash", "-c", "python manage.py runserver 0.0.0.0:8000"]
+ 
