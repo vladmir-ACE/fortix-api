@@ -1,8 +1,8 @@
 from django.urls import path
 from .views import (
-    JourListCreateAPIView, JourRetrieveUpdateDestroyAPIView,
-    JeuxListCreateAPIView, JeuxRetrieveUpdateDestroyAPIView,
-    PronosticListCreateAPIView, PronosticRetrieveUpdateDestroyAPIView
+    AddPronosticView, JeuxByJourAndCountryAPIView, JourListCreateAPIView, JourRetrieveUpdateDestroyAPIView,
+    JeuxListCreateAPIView, JeuxRetrieveUpdateDestroyAPIView, ListPronoByUserAndCountry,
+    PronosticListCreateAPIView, PronosticListView, PronosticRetrieveUpdateDestroyAPIView
 )
 
 urlpatterns = [
@@ -13,8 +13,18 @@ urlpatterns = [
     # Jeux URLs
     path('jeux/', JeuxListCreateAPIView.as_view(), name='jeux-list-create'),
     path('jeux/<int:pk>/', JeuxRetrieveUpdateDestroyAPIView.as_view(), name='jeux-detail'),
+    
+    #jeux by pays et jours
+    path('jeux/<int:jour_id>/<int:pays_id>/', JeuxByJourAndCountryAPIView.as_view(), name='jeux_by_jour_and_country'),
 
     # Pronostic URLs
-    path('pronostics/', PronosticListCreateAPIView.as_view(), name='pronostic-list-create'),
-    path('pronostics/<int:pk>/', PronosticRetrieveUpdateDestroyAPIView.as_view(), name='pronostic-detail'),
+    # generics endpoint
+    # path('pronostics/', PronosticListCreateAPIView.as_view(), name='pronostic-list-create'),
+    # path('pronostics/<int:pk>/', PronosticRetrieveUpdateDestroyAPIView.as_view(), name='pronostic-detail'),
+    
+    path('add/', AddPronosticView.as_view(), name='add_pronostic'),
+    path('list/', PronosticListView.as_view(), name='list_pronostics'),
+    
+    path('filter/<int:user_id>/<int:pays_id>/', ListPronoByUserAndCountry.as_view(), name='get_pronostics_by_user_and_country'),
+    
 ]

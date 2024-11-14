@@ -53,7 +53,6 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -87,7 +86,7 @@ WSGI_APPLICATION = 'fortix.wsgi.application'
 
 DATABASES = {
     
-    #local
+    #prod
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': os.environ.get('DB_NAME'),  # Remplace par le nom de ta base de données MySQL
@@ -97,13 +96,13 @@ DATABASES = {
             'PORT': os.environ.get('DB_PORT'), # Habituellement 3306 pour MySQL
             
         }
-    #prod 
+    #local 
     #     'default': {
     #     'ENGINE': 'django.db.backends.mysql',
     #     'NAME': 'fortix',
-    #     'USER': 'vlad',  # Utiliser les valeurs définies dans le fichier .env
-    #     'PASSWORD': 'vladmirC4',
-    #     'HOST': 'db',  # Utiliser 'db' au lieu de 'localhost'
+    #     'USER': 'root',  # Utiliser les valeurs définies dans le fichier .env
+    #     'PASSWORD': '',
+    #     'HOST': 'localhost',  # Utiliser 'db' au lieu de 'localhost'
     #     'PORT': '3306', 
     # }
     

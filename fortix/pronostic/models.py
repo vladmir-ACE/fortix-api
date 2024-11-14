@@ -24,7 +24,11 @@ class Jeux(models.Model):
 
 class Pronostic(models.Model):
     date = models.DateField(default=date.today)
-    numbers = models.CharField(max_length=255)  # Représente les numéros du pronostic
+    # Représente les numéros du pronostic
+    banka=models.CharField(max_length=255 ,null=True)
+    two=models.CharField(max_length=255,null=True)
+    perm=models.CharField(max_length=255,null=True)
+    #jeu et forcasseur
     jeu = models.ForeignKey(Jeux, on_delete=models.CASCADE)  # Relation avec Jeux
     forcasseur = models.ForeignKey(Forcasseur, on_delete=models.CASCADE)  # Relation avec Forcasseur (l'auteur du pronostic)
 
