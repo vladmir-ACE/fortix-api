@@ -4,6 +4,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
+
+from users.models import User
 from .serializers import RegisterSerializer, LoginSerializer, UserSerializer
 from drf_yasg.utils import swagger_auto_schema
 
@@ -87,3 +89,20 @@ class LoginView(APIView):
             'details': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
               
+              
+              
+              
+# get all forcasseur 
+
+class ListForcasseur(APIView):
+    def get(self, request, *args, **kwargs):
+        serializer=UserSerializer
+        try:
+            forcasseurs=User.objects.filter(is_forcasseur=True)           
+            list=serializer(forcasseurs,many=True)           
+            return Response({"message": "Success", "data": list.data}, status=status.HTTP_200_OK)           
+        except:
+             return Response({"message": "une erreur est survenue"}, status=status.HTTP_404_NOT_FOUND)
+            
+        
+        

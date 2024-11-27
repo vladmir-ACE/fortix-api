@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     AddPronosticView, JeuxByJourAndCountryAPIView, JourListCreateAPIView, JourRetrieveUpdateDestroyAPIView,
     JeuxListCreateAPIView, JeuxRetrieveUpdateDestroyAPIView, ListPronoByUserAndCountry,
-    PronosticListCreateAPIView, PronosticListView, PronosticRetrieveUpdateDestroyAPIView
+    PronosticListCreateAPIView, PronosticListView, PronosticRetrieveUpdateDestroyAPIView,ClientPronosticsTodayView,ClientPronosticsByDay
 )
 
 urlpatterns = [
@@ -26,5 +26,10 @@ urlpatterns = [
     path('list/', PronosticListView.as_view(), name='list_pronostics'),
     
     path('filter/<int:user_id>/<int:pays_id>/', ListPronoByUserAndCountry.as_view(), name='get_pronostics_by_user_and_country'),
+    
+    
+    # Pronostic des clients 
+    path('client/prono/<int:pays_id>/',ClientPronosticsTodayView.as_view(),name="list of todays pronostic for client"),
+    path('client/prono/<int:jour_id>/<int:pays_id>/',ClientPronosticsByDay.as_view(),name="list of pronostics by days")
     
 ]

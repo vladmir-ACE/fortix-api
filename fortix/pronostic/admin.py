@@ -13,6 +13,6 @@ class JeuxAdmin(admin.ModelAdmin):
 
 @admin.register(Pronostic)
 class PronosticAdmin(admin.ModelAdmin):
-    list_display = ('id', 'jeu', 'forcasseur', 'date', "banka","two","perm")  # Affiche les informations principales dans la liste des pronostics
+    list_display = ('id', 'jeu', 'forcasseur', 'date', "banka","two","perm","created_at")  # Affiche les informations principales dans la liste des pronostics
     list_filter = ('date', 'jeu')  # Ajoute des filtres sur la date et le jeu
     search_fields = ('jeu__nom', 'forcasseur__user__first_name')  # Ajoute un champ de recherche sur le nom du jeu et le prénom du forcasseur

@@ -31,6 +31,7 @@ class Pronostic(models.Model):
     #jeu et forcasseur
     jeu = models.ForeignKey(Jeux, on_delete=models.CASCADE)  # Relation avec Jeux
     forcasseur = models.ForeignKey(Forcasseur, on_delete=models.CASCADE)  # Relation avec Forcasseur (l'auteur du pronostic)
+    created_at = models.DateTimeField(auto_now_add=True,null=True)
 
     def __str__(self):
         return f"Pronostic pour {self.jeu.nom} le {self.date} par {self.forcasseur.user.first_name}"
