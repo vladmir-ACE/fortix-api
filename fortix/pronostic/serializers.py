@@ -120,6 +120,10 @@ class PronosticSerializer(serializers.ModelSerializer):
         return pronostic
 
     
+#update pronostics serializer
+
+    
+    
     
 #part for List pronostic serializer 
 

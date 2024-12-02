@@ -114,6 +114,109 @@ class AddPronosticView(APIView):
         logger.error(f"Invalid data: {error_message}")
         return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
 
+#update pronostics 
+
+DAYS_INDEX = {
+    "LUNDI": 0,
+    "MARDI": 1,
+    "MERCREDI": 2,
+    "JEUDI": 3,
+    "VENDREDI": 4,
+    "SAMEDI": 5,
+    "DIMANCHE": 6,
+}
+
+EN_TO_FR_DAYS = {
+    "MONDAY": "LUNDI",
+    "TUESDAY": "MARDI",
+    "WEDNESDAY": "MERCREDI",
+    "THURSDAY": "JEUDI",
+    "FRIDAY": "VENDREDI",
+    "SATURDAY": "SAMEDI",
+    "SUNDAY": "DIMANCHE",
+}
+
+class UpdatePronosticView(APIView):
+    def put(self, request, pronostic_id):
+        try:
+            # Récupération du pronostic à modifier
+            pronostic = Pronostic.objects.get(id=pronostic_id)
+        except Pronostic.DoesNotExist:
+            return Response({"error": "Pronostic introuvable."}, status=status.HTTP_404_NOT_FOUND)
+
+        jeu = pronostic.jeu
+
+        # Récupérer le jour et l'heure actuels
+        current_datetime = now()
+        current_day = current_datetime.strftime('%A').upper()  # Jour actuel en anglais (majuscule)
+        current_time = current_datetime.time()
+
+        # Convertir le jour actuel en français
+        current_day_fr = EN_TO_FR_DAYS.get(current_day)
+
+        # Récupérer l'indice des jours pour comparaison
+        current_day_index = DAYS_INDEX.get(current_day_fr)
+        jeu_day_index = DAYS_INDEX.get(jeu.jour.nom)
+
+        if current_day_index is None or jeu_day_index is None:
+            return Response({"error": "Une erreur est survenue avec la conversion des jours."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Vérification 1 : Si le jour du jeu est déjà passé
+        if current_day_index > jeu_day_index:
+            return Response(
+                {"error": f"Le jour du jeu ({jeu.jour.nom}) est déjà passé. Vous ne pouvez pas modifier ce pronostic."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Vérification 2 : Si le jour est aujourd'hui, comparer l'heure
+        if current_day_index == jeu_day_index and current_time > jeu.heure:
+            return Response(
+                {"error": "L'heure du jeu est déjà passée pour aujourd'hui. Vous ne pouvez pas modifier ce pronostic."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Mise à jour des données du pronostic
+        pronostic.banka = request.data.get('banka', pronostic.banka)
+        pronostic.two = request.data.get('two', pronostic.two)
+        pronostic.perm = request.data.get('perm', pronostic.perm)
+        pronostic.save()
+
+        # Retourner la réponse en cas de succès
+        return Response(
+            {"message": "Pronostic mis à jour avec succès.", "data": {
+                "id": pronostic.id,
+                "banka": pronostic.banka,
+                "two": pronostic.two,
+                "perm": pronostic.perm,
+            }},
+            status=status.HTTP_200_OK,
+        )
+        
+ #       
+
+#delete pronostics 
+class DeletePronosticView(APIView):
+    def delete(self, request, prono_id):
+        try:
+            # Récupérer le pronostic à supprimer
+            pronostic = Pronostic.objects.get(id=prono_id)
+        except Pronostic.DoesNotExist:
+            return Response(
+                {"error": "Pronostic introuvable."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Suppression du pronostic
+        pronostic.delete()
+
+        # Réponse en cas de succès
+        return Response(
+            {"message": f"Pronostic avec l'ID {prono_id} supprimé avec succès."},
+            status=status.HTTP_200_OK
+        )
+
+
+
 #list own pronostic by contry 
 class ListPronoByUserAndCountry(APIView):
     def get(self,request, user_id, pays_id):
