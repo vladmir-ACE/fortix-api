@@ -3,7 +3,7 @@ from .views import (
     AddPronosticView, JeuxByJourAndCountryAPIView, JourListCreateAPIView, JourRetrieveUpdateDestroyAPIView,
     JeuxListCreateAPIView, JeuxRetrieveUpdateDestroyAPIView, ListPronoByUserAndCountry,
     PronosticListCreateAPIView,UpdatePronosticView, PronosticListView, PronosticRetrieveUpdateDestroyAPIView,ClientPronosticsTodayView,ClientPronosticsByDay,
-    DeletePronosticView
+    DeletePronosticView,ClientPronosticsByDayAndForcasseur
 )
 
 urlpatterns = [
@@ -32,7 +32,9 @@ urlpatterns = [
     
     
     # Pronostic des clients 
-    path('client/prono/<int:pays_id>/',ClientPronosticsTodayView.as_view(),name="list of todays pronostic for client"),
-    path('client/prono/<int:jour_id>/<int:pays_id>/',ClientPronosticsByDay.as_view(),name="list of pronostics by days")
+    path('client/prono/<int:pays_id>/',ClientPronosticsTodayView.as_view(),name="list_of_todays_pronostic_for_client"),
+    path('client/prono/<int:jour_id>/<int:pays_id>/',ClientPronosticsByDay.as_view(),name="list_of_pronostics_by_days"),
+    #Pronostic d'un forcasseur dans la semaine en cours 
+    path('client/prono/<int:jour_id>/<int:pays_id>/<int:user_id>/',ClientPronosticsByDayAndForcasseur.as_view(),name="list_pronostic_by_forcas")
     
 ]

@@ -67,7 +67,7 @@ class JeuxByJourAndCountryAPIView(APIView):
 class PronosticListView(APIView):
     def get(self, request, *args, **kwargs):
         try:
-            pronostics = Pronostic.objects.all()
+            pronostics = Pronostic.objects.all().order_by('-created_at')
             serializer = ListPronosticSerializer(pronostics, many=True)
             logger.info("Pronostics retrieved successfully.")
             return Response({"message": "Pronostics retrieved successfully", "data": serializer.data}, status=status.HTTP_200_OK)
@@ -144,6 +144,21 @@ class UpdatePronosticView(APIView):
         except Pronostic.DoesNotExist:
             return Response({"error": "Pronostic introuvable."}, status=status.HTTP_404_NOT_FOUND)
 
+        # Obtenir la date actuelle
+        current_date = now().date()
+        
+        # Calculer le début et la fin de la semaine actuelle
+        start_of_week = current_date - timedelta(days=current_date.weekday())  # Début de la semaine (lundi)
+        end_of_week = start_of_week + timedelta(days=6)  # Fin de la semaine (dimanche)
+
+        # Vérifier si la date du pronostic est dans la semaine actuelle
+        if not (start_of_week <= pronostic.date <= end_of_week):
+            return Response(
+                {"error": "Vous ne pouvez modifier ce pronostic car il n'a pas été enregistré dans la semaine actuelle."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Récupération des informations du jeu associé au pronostic
         jeu = pronostic.jeu
 
         # Récupérer le jour et l'heure actuels
@@ -192,8 +207,6 @@ class UpdatePronosticView(APIView):
             status=status.HTTP_200_OK,
         )
         
- #       
-
 #delete pronostics 
 class DeletePronosticView(APIView):
     def delete(self, request, prono_id):
@@ -214,8 +227,6 @@ class DeletePronosticView(APIView):
             {"message": f"Pronostic avec l'ID {prono_id} supprimé avec succès."},
             status=status.HTTP_200_OK
         )
-
-
 
 #list own pronostic by contry 
 class ListPronoByUserAndCountry(APIView):
@@ -305,6 +316,39 @@ class ClientPronosticsByDay(APIView):
             # Filtrer les pronostics du jour actuel dans la semaine actuelle et par pays_id
             pronostics_today = Pronostic.objects.filter(
                 jeu__jour_id=jour_id,  # Filtrer par jour
+                jeu__pays_id=pays_id,          # Filtrer par pays_id
+                date__gte=start_of_week,       # Date >= début de la semaine
+                date__lte=end_of_week          # Date <= fin de la semaine
+            ).select_related('jeu', 'forcasseur').order_by('-created_at')  # Optimisation des requêtes
+
+           # Sérialiser les pronostics
+            serializer = ListPronosticSerializer(pronostics_today, many=True)
+            
+            return Response({"message": "Liste pronostics", "data": serializer.data}, status=status.HTTP_200_OK)
+        except:
+            return Response({"message": "une erreur est survenue"}, status=status.HTTP_404_NOT_FOUND)
+            
+#pronostic d'une journee quelconque de la semaine en cours 
+class ClientPronosticsByDayAndForcasseur(APIView):
+    def get(self, request,jour_id, pays_id,user_id ):
+        try:
+          
+            # Obtenir la date actuelle
+            current_datetime = now()
+           
+            # Calculer le début et la fin de la semaine actuelle
+            today = current_datetime.date()
+            start_of_week = today - timedelta(days=today.weekday())  # Début de la semaine (lundi)
+            end_of_week = start_of_week + timedelta(days=6)  # Fin de la semaine (dimanche)
+
+            # Vérifier si pays_id est fourni
+            if not pays_id:
+                return Response({"error": "Le paramètre pays_id est requis."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Filtrer les pronostics du jour actuel dans la semaine actuelle et par pays_id
+            pronostics_today = Pronostic.objects.filter(               
+                jeu__jour_id=jour_id,  # Filtrer par jour
+                forcasseur__user_id=user_id,  # Filtrer par forcasseur
                 jeu__pays_id=pays_id,          # Filtrer par pays_id
                 date__gte=start_of_week,       # Date >= début de la semaine
                 date__lte=end_of_week          # Date <= fin de la semaine
