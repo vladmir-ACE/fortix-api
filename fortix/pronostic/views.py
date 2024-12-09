@@ -2,8 +2,8 @@ from rest_framework.response import Response
 from rest_framework import generics,status
 
 from users.models import Forcasseur
-from .models import Jour, Jeux, Pronostic
-from .serializers import GenericPronosticSerializer, JourSerializer, JeuxSerializer, ListPronosticSerializer, PronosticSerializer
+from .models import Jour, Jeux, Pronostic, Resultat
+from .serializers import AddResultatSerializer, GenericPronosticSerializer, JourSerializer, JeuxSerializer, ListPronosticSerializer, ListResultatSerializer, PronosticGagnantSerializer, PronosticSerializer
 from rest_framework.views import APIView
 import logging
 
@@ -361,3 +361,170 @@ class ClientPronosticsByDayAndForcasseur(APIView):
         except:
             return Response({"message": "une erreur est survenue"}, status=status.HTTP_404_NOT_FOUND)
             
+            
+
+#PARIE ADMIN POUR LES RESULTATS
+## add
+class AddResultatView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = AddResultatSerializer(data=request.data)
+
+        if serializer.is_valid():
+            try:
+                resultat = serializer.save()
+                logger.info(f"Resultat created successfully for jeu_id {request.data['jeu_id']}")
+                return Response({"message": "Resultat created successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
+            except serializers.ValidationError as e:
+                # Extraction du message brut d'erreur
+                if isinstance(e.detail, dict):  # Si c'est un dictionnaire
+                    error_message = list(e.detail.values())[0][0] if isinstance(list(e.detail.values())[0], list) else list(e.detail.values())[0]
+                elif isinstance(e.detail, list):  # Si c'est une liste
+                    error_message = e.detail[0]
+                else:  # Si c'est une chaîne ou autre
+                    error_message = str(e.detail)
+                
+                logger.error(f"Validation error: {error_message}")
+                return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                logger.error(f"Unexpected error: {str(e)}")
+                return Response({"error": "An unexpected error occurred"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Extraction des erreurs du serializer pour une réponse simplifiée
+        if isinstance(serializer.errors, dict):
+            error_message = list(serializer.errors.values())[0][0] if isinstance(list(serializer.errors.values())[0], list) else list(serializer.errors.values())[0]
+        else:
+            error_message = str(serializer.errors)
+
+        logger.error(f"Invalid data: {error_message}")
+        return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+
+##list by days and country
+
+class ResultatsByDay(APIView):
+    def get(self, request,jour_id, pays_id ):
+        try:
+          
+            # Obtenir la date actuelle
+            current_datetime = now()
+           
+            # Calculer le début et la fin de la semaine actuelle
+            today = current_datetime.date()
+            start_of_week = today - timedelta(days=today.weekday())  # Début de la semaine (lundi)
+            end_of_week = start_of_week + timedelta(days=6)  # Fin de la semaine (dimanche)
+
+            # Vérifier si pays_id est fourni
+            if not pays_id:
+                return Response({"error": "Le paramètre pays_id est requis."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Filtrer les pronostics du jour actuel dans la semaine actuelle et par pays_id
+            resulats_today = Resultat.objects.filter(
+                jeu__jour_id=jour_id,  # Filtrer par jour
+                jeu__pays_id=pays_id,          # Filtrer par pays_id
+                date__gte=start_of_week,       # Date >= début de la semaine
+                date__lte=end_of_week          # Date <= fin de la semaine
+            ).select_related('jeu').order_by('-created_at')  # Optimisation des requêtes
+
+            print(resulats_today)
+           # Sérialiser les pronostics
+            serializer = ListResultatSerializer(resulats_today, many=True)
+            
+            return Response({"message": "Liste des resulats", "data": serializer.data}, status=status.HTTP_200_OK)
+        except:
+            return Response({"message": "une erreur est survenue"}, status=status.HTTP_404_NOT_FOUND)
+       
+## update 
+class UpdateResultat(APIView):
+    def put(self, request, resultat_id):
+        try:
+            # Récupération du resultat à modifier
+            resultat = Resultat.objects.get(id=resultat_id)
+        except Resultat.DoesNotExist:
+            return Response({"error": "Resultat introuvable."}, status=status.HTTP_404_NOT_FOUND)
+
+   
+
+        # Mise à jour des données du resultat
+        resultat.numbers = request.data.get('numbers', resultat.numbers)
+        resultat.win = request.data.get('win', resultat.win)
+        resultat.mac = request.data.get('mac', resultat.mac)
+        resultat.save()
+
+        # Retourner la réponse en cas de succès
+        return Response(
+            {"message": "Resultat mis à jour avec succès.", "data": {
+                "id": resultat.id,
+                "numbers": resultat.numbers,
+                "win": resultat.win,
+                "mac": resultat.mac,
+            }},
+            status=status.HTTP_200_OK,
+        )
+        
+##delete resultat
+class DeleteResultatView(APIView):
+    def delete(self, request, resultat_id):
+        try:
+            # Récupérer le pronostic à supprimer
+            resultat = Resultat.objects.get(id=resultat_id)
+        except Resultat.DoesNotExist:
+            return Response(
+                {"error": "Resultat introuvable."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Suppression du pronostic
+        resultat.delete()
+
+        # Réponse en cas de succès
+        return Response(
+            {"message": f"Resultat avec l'ID {resultat_id} supprimé avec succès."},
+            status=status.HTTP_200_OK
+        )
+
+## pronostics gagnants 
+class WinningPronostics(APIView):
+    def get(self, request, jour_id, pays_id):
+        try:
+            # Obtenir la date actuelle et les limites de la semaine
+            current_datetime = now()
+            today = current_datetime.date()
+            start_of_week = today - timedelta(days=today.weekday())
+            end_of_week = start_of_week + timedelta(days=6)
+
+            # Vérification du paramètre pays_id
+            if not pays_id:
+                return Response({"error": "Le paramètre pays_id est requis."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Récupération des pronostics et résultats filtrés
+            pronostics = Pronostic.objects.filter(
+                jeu__jour_id=jour_id,
+                jeu__pays_id=pays_id,
+                date__gte=start_of_week,
+                date__lte=end_of_week
+            ).select_related('jeu', 'forcasseur')
+
+            resultats = Resultat.objects.filter(
+                jeu__jour_id=jour_id,
+                jeu__pays_id=pays_id,
+                date__gte=start_of_week,
+                date__lte=end_of_week
+            ).select_related('jeu')
+
+           # Organiser les résultats par jeu pour un accès rapide
+            results_by_game = {}
+            for result in resultats:
+                if result.jeu.id not in results_by_game:
+                    results_by_game[result.jeu.id] = []
+                results_by_game[result.jeu.id].append({
+                    'type': result.type,
+                    'numbers': result.numbers,
+                    'win': result.win,
+                    'mac': result.mac
+                })
+
+            # Sérialiser les pronostics avec le contexte des résultats
+            serializer = PronosticGagnantSerializer(pronostics, many=True, context={'results': results_by_game})
+            return Response({"message": "Pronostics gagnants", "data": serializer.data}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"message": "Une erreur est survenue", "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

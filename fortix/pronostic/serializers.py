@@ -5,7 +5,7 @@ from django.utils.timezone import now, make_aware
 
 from users.models import Forcasseur, User
 
-from .models import Jour, Jeux, Pronostic
+from .models import Jour, Jeux, Pronostic, Resultat
 
 class JourSerializer(serializers.ModelSerializer):
     class Meta:
@@ -148,3 +148,110 @@ class ListPronosticSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pronostic
         fields = ['id', 'date', 'banka','two','perm', 'jeu', 'forcasseur']
+        
+
+#serializer for resultat
+
+class AddResultatSerializer(serializers.ModelSerializer):
+    jeu_id = serializers.IntegerField(write_only=True)
+    type = serializers.CharField(write_only=True)
+    numbers = serializers.CharField(required=False, allow_blank=True)
+    win = serializers.CharField(required=False, allow_blank=True)
+    mac = serializers.CharField(required=False, allow_blank=True)
+    
+    class Meta:
+        model=Resultat  
+        fields = ['jeu_id', 'type', 'numbers', 'win', 'mac']
+        
+    def create(self, validated_data):
+        jeu_id = validated_data.pop('jeu_id')
+       
+        # Récupérer le jeu 
+        try:
+            jeu = Jeux.objects.get(id=jeu_id)
+            
+        except (Jeux.DoesNotExist) as e:
+            raise serializers.ValidationError(f"ID de jeu  invalide : {str(e)}")
+
+        # Récupérer le jour actuel et l'heure actuelle
+        current_datetime = now()
+        current_day = current_datetime.strftime('%A').upper()  # Jour actuel en anglais (majuscule)
+        current_time = current_datetime.time()
+
+        # Convertir le jour actuel en français
+        current_day_fr = EN_TO_FR_DAYS.get(current_day)
+
+        # Récupérer l'indice des jours pour comparaison
+        current_day_index = DAYS_INDEX.get(current_day_fr)
+        jeu_day_index = DAYS_INDEX.get(jeu.jour.nom)
+
+        if current_day_index is None or jeu_day_index is None:
+            raise serializers.ValidationError("Une erreur est survenue avec la conversion des jours.")
+
+
+        # Vérification 3 : Pas de resultat multiple pour le même jeu dans la semaine
+        today = current_datetime.date()
+        start_of_week = today - timedelta(days=today.weekday())  # Début de la semaine (lundi)
+
+        existing_resultat = Resultat.objects.filter(
+            jeu=jeu,
+            date__gte=start_of_week,
+            date__lte=today
+        ).exists()
+
+        if existing_resultat:
+            raise serializers.ValidationError(
+                "Un resultat pour ce jeu a déjà été enregistré cette semaine."
+            )
+
+        # Création du pronostic
+        resultat = Resultat.objects.create(
+            jeu=jeu,
+            **validated_data
+        )
+        return resultat
+
+
+class ListResultatSerializer(serializers.ModelSerializer):
+       
+    jeu = JeuxSerializer()  # Inclure le serializer Jeux
+
+    class Meta:
+        model = Resultat
+        fields = ['id', 'date','type', 'numbers','win','mac', 'jeu',]
+        
+#pronostics gagnants 
+
+class PronosticGagnantSerializer(serializers.ModelSerializer):
+    jeu = JeuxSerializer()  # Sérialisation du jeu
+    forcasseur = ForcasseurSerializer()  # Sérialisation du forcasseur
+    wining_numbers = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Pronostic
+        fields = ['id', 'date', 'banka', 'two', 'perm', 'jeu', 'forcasseur', 'wining_numbers']
+
+    def get_wining_numbers(self, obj):
+        # Récupérer les résultats associés au jeu du pronostic
+        results = self.context.get('results', {}).get(obj.jeu.id, [])
+        winning_numbers = set()
+
+        for result in results:
+            if result['type'] == 'SIMPLE':
+                result_numbers = set(result['numbers'].split('-'))
+            elif result['type'] == 'DOUBLE':
+                result_numbers = set(result['win'].split('-')) | set(result['mac'].split('-'))
+            else:
+                continue
+
+            # Vérifiez les correspondances
+            banka = set(obj.banka.split('-')) if obj.banka else set()
+            two = set(obj.two.split('-')) if obj.two else set()
+            perm = set(obj.perm.split('-')) if obj.perm else set()
+
+            winning_numbers |= (banka & result_numbers)
+            winning_numbers |= (two & result_numbers)
+            winning_numbers |= (perm & result_numbers)
+
+        # Retourner les numéros gagnants formatés avec "-"
+        return '-'.join(sorted(winning_numbers))

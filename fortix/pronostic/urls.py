@@ -1,9 +1,9 @@
 from django.urls import path
 from .views import (
-    AddPronosticView, JeuxByJourAndCountryAPIView, JourListCreateAPIView, JourRetrieveUpdateDestroyAPIView,
+    AddPronosticView, AddResultatView, DeleteResultatView, JeuxByJourAndCountryAPIView, JourListCreateAPIView, JourRetrieveUpdateDestroyAPIView,
     JeuxListCreateAPIView, JeuxRetrieveUpdateDestroyAPIView, ListPronoByUserAndCountry,
-    PronosticListCreateAPIView,UpdatePronosticView, PronosticListView, PronosticRetrieveUpdateDestroyAPIView,ClientPronosticsTodayView,ClientPronosticsByDay,
-    DeletePronosticView,ClientPronosticsByDayAndForcasseur
+    PronosticListCreateAPIView, ResultatsByDay,UpdatePronosticView, PronosticListView, PronosticRetrieveUpdateDestroyAPIView,ClientPronosticsTodayView,ClientPronosticsByDay,
+    DeletePronosticView,ClientPronosticsByDayAndForcasseur, UpdateResultat, WinningPronostics
 )
 
 urlpatterns = [
@@ -34,7 +34,19 @@ urlpatterns = [
     # Pronostic des clients 
     path('client/prono/<int:pays_id>/',ClientPronosticsTodayView.as_view(),name="list_of_todays_pronostic_for_client"),
     path('client/prono/<int:jour_id>/<int:pays_id>/',ClientPronosticsByDay.as_view(),name="list_of_pronostics_by_days"),
+    
     #Pronostic d'un forcasseur dans la semaine en cours 
-    path('client/prono/<int:jour_id>/<int:pays_id>/<int:user_id>/',ClientPronosticsByDayAndForcasseur.as_view(),name="list_pronostic_by_forcas")
+    path('client/prono/<int:jour_id>/<int:pays_id>/<int:user_id>/',ClientPronosticsByDayAndForcasseur.as_view(),name="list_pronostic_by_forcas"),
+    
+    #PARTIE DES RESULTATS
+    path('add/resultat/', AddResultatView.as_view(), name='add_resultats'),
+    path('list/resultat/<int:jour_id>/<int:pays_id>/', ResultatsByDay.as_view(), name='list_resultats'),
+    path('update/resultat/<int:resultat_id>/', UpdateResultat.as_view(), name='update_resultat'),
+    path('delete/resultat/<int:resultat_id>/', DeleteResultatView.as_view(), name='delete_resultat'),
+    
+    #PARTIE DES PRONOSTICS GAGNANTS
+    path('list/wining/<int:jour_id>/<int:pays_id>/', WinningPronostics.as_view(), name='list_prono_gagnants'),
+    
+    
     
 ]

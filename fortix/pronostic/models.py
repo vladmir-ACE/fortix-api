@@ -35,3 +35,20 @@ class Pronostic(models.Model):
 
     def __str__(self):
         return f"Pronostic pour {self.jeu.nom} le {self.date} par {self.forcasseur.user.first_name}"
+
+
+
+#model for resutlat 
+
+class Resultat(models.Model):
+    TYPE_CHOICES = [
+        ('SIMPLE', 'Simple'),
+        ('DOUBLE', 'Double'),
+    ]
+    created_at = models.DateTimeField(auto_now_add=True,null=True)
+    date = models.DateField(default=date.today)
+    jeu = models.ForeignKey(Jeux, on_delete=models.CASCADE)
+    type = models.CharField(max_length=255, choices=TYPE_CHOICES, null=True)
+    numbers=models.CharField(max_length=255,null=True)
+    win=models.CharField(max_length=255,null=True)
+    mac=models.CharField(max_length=255,null=True)
