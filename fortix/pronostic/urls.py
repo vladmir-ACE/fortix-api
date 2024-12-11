@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     AddPronosticView, AddResultatView, DeleteResultatView, JeuxByJourAndCountryAPIView, JourListCreateAPIView, JourRetrieveUpdateDestroyAPIView,
     JeuxListCreateAPIView, JeuxRetrieveUpdateDestroyAPIView, ListPronoByUserAndCountry,
-    PronosticListCreateAPIView, ResultatsByDay,UpdatePronosticView, PronosticListView, PronosticRetrieveUpdateDestroyAPIView,ClientPronosticsTodayView,ClientPronosticsByDay,
+    PronosticListCreateAPIView, ResultatsByDay, StatsForcasseurView, TotalPronosticsForcasseurView,UpdatePronosticView, PronosticListView, PronosticRetrieveUpdateDestroyAPIView,ClientPronosticsTodayView,ClientPronosticsByDay,
     DeletePronosticView,ClientPronosticsByDayAndForcasseur, UpdateResultat, WinningPronostics
 )
 
@@ -47,6 +47,9 @@ urlpatterns = [
     #PARTIE DES PRONOSTICS GAGNANTS
     path('list/wining/<int:jour_id>/<int:pays_id>/', WinningPronostics.as_view(), name='list_prono_gagnants'),
     
+    ##PRONOSTICS STATISTICS 
+    path('stats/nbre_prono/<int:forcasseur_id>/', TotalPronosticsForcasseurView.as_view(), name='nbre_prono_forc'),
+    path('stats/forc/<int:user_id>/', StatsForcasseurView.as_view(), name='stat_forc'),
     
     
 ]

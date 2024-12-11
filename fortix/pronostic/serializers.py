@@ -130,7 +130,7 @@ class PronosticSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'phone_number', 'country']
+        fields = ['id', 'first_name', 'last_name', 'phone_number', 'country_id']
 
 # Serializer pour l'objet Forcasseur, incluant les infos de l'objet User
 class ForcasseurSerializer(serializers.ModelSerializer):
@@ -210,6 +210,9 @@ class AddResultatSerializer(serializers.ModelSerializer):
             **validated_data
         )
         return resultat
+    
+    
+        
 
 
 class ListResultatSerializer(serializers.ModelSerializer):
@@ -226,10 +229,11 @@ class PronosticGagnantSerializer(serializers.ModelSerializer):
     jeu = JeuxSerializer()  # Sérialisation du jeu
     forcasseur = ForcasseurSerializer()  # Sérialisation du forcasseur
     wining_numbers = serializers.SerializerMethodField()
+    score = serializers.SerializerMethodField()
 
     class Meta:
         model = Pronostic
-        fields = ['id', 'date', 'banka', 'two', 'perm', 'jeu', 'forcasseur', 'wining_numbers']
+        fields = ['id', 'date', 'banka', 'two', 'perm', 'jeu', 'forcasseur', 'wining_numbers','score']
 
     def get_wining_numbers(self, obj):
         # Récupérer les résultats associés au jeu du pronostic
@@ -255,3 +259,38 @@ class PronosticGagnantSerializer(serializers.ModelSerializer):
 
         # Retourner les numéros gagnants formatés avec "-"
         return '-'.join(sorted(winning_numbers))
+    
+    def get_score(self, obj):
+        # Récupérer les résultats associés au jeu du pronostic
+        results = self.context.get('results', {}).get(obj.jeu.id, [])
+        score = 0
+        banka_found = False
+        two_found = False
+
+        for result in results:
+            if result['type'] == 'SIMPLE':
+                result_numbers = set(result['numbers'].split('-'))
+            elif result['type'] == 'DOUBLE':
+                result_numbers = set(result['win'].split('-')) | set(result['mac'].split('-'))
+            else:
+                continue
+
+            # Vérifiez les correspondances
+            banka = set(obj.banka.split('-')) if obj.banka else set()
+            two = set(obj.two.split('-')) if obj.two else set()
+
+            # Marquer comme trouvé si correspondance avec les résultats
+            if banka & result_numbers:
+                banka_found = True
+            if two <= result_numbers:
+                two_found = True
+
+        # Calculer le score en fonction des correspondances
+        if banka_found and two_found:
+            score = 25  # Si les deux sont trouvés
+        elif banka_found:
+            score = 15  # Si seul le banka est trouvé
+        elif two_found:
+            score = 10  # Si seul le two est trouvé
+
+        return score

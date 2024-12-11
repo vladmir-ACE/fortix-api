@@ -88,4 +88,10 @@ class LoginSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'phone_number', 'first_name', 'last_name', 'username', 'is_forcasseur', 'is_parieur']
+        fields = ['id', 'phone_number', 'country_id' ,'first_name', 'last_name', 'username', 'is_forcasseur', 'is_parieur']
+        
+class ForcasseurSerializer(serializers.ModelSerializer):
+    user=UserSerializer()
+    class Meta:
+        model=Forcasseur
+        fields =['id','user','total_winnings','success_rate']

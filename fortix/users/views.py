@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 
-from users.models import User
-from .serializers import RegisterSerializer, LoginSerializer, UserSerializer
+from .models import Forcasseur, User
+from .serializers import ForcasseurSerializer, RegisterSerializer, LoginSerializer, UserSerializer
 from drf_yasg.utils import swagger_auto_schema
 
 # Configure the logger
@@ -95,14 +95,28 @@ class LoginView(APIView):
 # get all forcasseur 
 
 class ListForcasseur(APIView):
-    def get(self, request, *args, **kwargs):
-        serializer=UserSerializer
+    def get(self, request,  *args, **kwargs):
         try:
-            forcasseurs=User.objects.filter(is_forcasseur=True)           
-            list=serializer(forcasseurs,many=True)           
-            return Response({"message": "Success", "data": list.data}, status=status.HTTP_200_OK)           
-        except:
-             return Response({"message": "une erreur est survenue"}, status=status.HTTP_404_NOT_FOUND)
+            forcasseurs = Forcasseur.objects.all()
+            serializer = ForcasseurSerializer(forcasseurs, many=True)
+            return Response({"message": "Success", "data": serializer.data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            # Journalisation de l'erreur pour un meilleur suivi
+            logger.error(f"Erreur lors de la récupération des forcasseurs : {str(e)}")
+            return Response({"message": "Une erreur est survenue"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
+class ClassementForcasseur(APIView):
+    def get(self, request, pays_id, *args, **kwargs):
+        try:
+            # Filtrer les forcasseurs en fonction de l'ID du pays
+            forcasseurs = Forcasseur.objects.filter(user__country_id=pays_id).order_by('-total_winnings')
             
-        
-        
+            # Sérialisation des données
+            serializer = ForcasseurSerializer(forcasseurs, many=True)
+            
+            # Retourner la réponse avec les données triées
+            return Response({"message": "Success", "data": serializer.data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            # En cas d'erreur, retourner un message d'erreur
+            return Response({"message": f"Erreur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

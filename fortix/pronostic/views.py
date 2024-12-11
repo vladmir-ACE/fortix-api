@@ -1,3 +1,5 @@
+from django.test import RequestFactory
+from django.urls import reverse
 from rest_framework.response import Response
 from rest_framework import generics,status
 
@@ -371,9 +373,53 @@ class AddResultatView(APIView):
 
         if serializer.is_valid():
             try:
+                 # Enregistrement du résultat
                 resultat = serializer.save()
                 logger.info(f"Resultat created successfully for jeu_id {request.data['jeu_id']}")
-                return Response({"message": "Resultat created successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
+
+                # Préparation de l'appel interne à WinningPronostics
+                jour_id = resultat.jeu.jour.id
+                pays_id = resultat.jeu.pays.id
+                jeu_id = resultat.jeu.id  # ID du jeu spécifique
+                factory = RequestFactory()
+
+                # Construire une requête GET interne pour WinningPronostics
+                internal_request = factory.get(
+                    reverse('list_prono_gagnants', kwargs={'jour_id': jour_id, 'pays_id': pays_id})
+                )
+
+                # Instancier la vue WinningPronostics et appeler la méthode GET
+                winning_pronostics_view = WinningPronostics.as_view()
+                response = winning_pronostics_view(internal_request, jour_id=jour_id, pays_id=pays_id)
+
+                # Vérifier le statut de la réponse
+                if response.status_code != 200:
+                    logger.error(f"Error retrieving winning pronostics: {response.data}")
+                    return Response(
+                        {"error": "Failed to retrieve winning pronostics"},
+                        status=response.status_code
+                    )
+
+                # Récupération des pronostics gagnants depuis la réponse
+                pronostics_gagnants = response.data.get('data', [])
+                
+                # Filtrer uniquement les pronostics pour le jeu spécifique
+                pronostics_gagnants_specifiques = [
+                    prono for prono in pronostics_gagnants if prono['jeu']['id'] == jeu_id
+                ]
+
+                # Mise à jour des scores des forcasseurs
+                for prono in pronostics_gagnants_specifiques:
+                    forcasseur_id = prono['forcasseur']['id']
+                    points = prono['score']  # Supposons que la vue WinningPronostics renvoie les points
+                    if points > 0:
+                        forcasseur = Forcasseur.objects.get(id=forcasseur_id)
+                        forcasseur.total_winnings += points
+                        forcasseur.save()
+
+                return Response({"message": "Resultat created and scores updated successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
+            
+            
             except serializers.ValidationError as e:
                 # Extraction du message brut d'erreur
                 if isinstance(e.detail, dict):  # Si c'est un dictionnaire
@@ -397,6 +443,8 @@ class AddResultatView(APIView):
 
         logger.error(f"Invalid data: {error_message}")
         return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+    
+    
 
 ##list by days and country
 
@@ -528,3 +576,58 @@ class WinningPronostics(APIView):
 
         except Exception as e:
             return Response({"message": "Une erreur est survenue", "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        
+        
+### STATISTIQUES 
+##NBR DE PRONOSTIC D'UN FORCASSEUR 
+
+class TotalPronosticsForcasseurView(APIView):
+    def get(self, request, forcasseur_id, *args, **kwargs):
+        try:
+            # Vérifier si le forcasseur existe
+            forcasseur = Forcasseur.objects.filter(id=forcasseur_id).first()
+            if not forcasseur:
+                return Response({"message": "Forcasseur non trouvé."}, status=status.HTTP_404_NOT_FOUND)
+
+            # Calculer le nombre total de pronostics
+            total_pronostics = Pronostic.objects.filter(forcasseur_id=forcasseur_id).count()
+
+            return Response({
+                "message": "Succès",
+                "data": {
+                    "forcasseur_id": forcasseur_id,
+                    "total_pronostics": total_pronostics
+                }
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            # Gestion des erreurs
+            return Response({"message": f"Une erreur est survenue : {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+## nbre prono and score of forc 
+
+class StatsForcasseurView(APIView):
+    def get(self, request, user_id, *args, **kwargs):
+        try:
+            # Vérifier si le forcasseur existe
+            forcasseur = Forcasseur.objects.filter(user_id=user_id).first()
+            if not forcasseur:
+                return Response({"message": "Forcasseur non trouvé."}, status=status.HTTP_404_NOT_FOUND)
+
+            # Calculer le nombre total de pronostics
+            total_pronostics = Pronostic.objects.filter(forcasseur_id=forcasseur.id).count()
+
+            return Response({
+                "message": "Succès",
+                "data": {
+                    "forcasseur_id": forcasseur.id,
+                    "score":forcasseur.total_winnings,
+                    "total_pronostics": total_pronostics
+                }
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            # Gestion des erreurs
+            return Response({"message": f"Une erreur est survenue : {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
