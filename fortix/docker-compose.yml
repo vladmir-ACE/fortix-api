@@ -11,8 +11,12 @@ services:
       DB_PORT: 5432
     volumes:
       - .:/app
-    ports:
-      - "8000:8000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`forti-x.com`)" # Règle de routage pour votre domaine
+      - "traefik.http.routers.web.entrypoints=websecure"   # Utilisation de HTTPS
+      - "traefik.http.routers.web.tls.certresolver=myresolver" # Let's Encrypt
+      - "traefik.http.services.web.loadbalancer.server.port=8000" # Port interne exposé par Django
     depends_on:
       - db
 
@@ -27,5 +31,24 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data  # Volume pour persister les données
 
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    command:
+      - "--entrypoints.web.address=:80" # HTTP
+      - "--entrypoints.websecure.address=:443" # Définir le point d'entrée HTTPS
+      - "--providers.docker" # Activer le support Docker
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true" # Défis TLS pour Let's Encrypt
+      - "--certificatesresolvers.myresolver.acme.email=dev.vladmir@gmail.com" # Votre e-mail pour Let's Encrypt
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json" # Stockage des certificats
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure" # Redirection HTTP -> HTTPS
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https" # Forcer HTTPS
+    ports:
+      - "443:443"  # HTTPS
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro" # Accès au socket Docker
+      - "./letsencrypt:/letsencrypt" # Volume pour stocker les certificats
+
 volumes:
   db_data:
+  letsencrypt:

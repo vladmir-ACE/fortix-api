@@ -557,6 +557,12 @@ class WinningPronostics(APIView):
                 date__gte=start_of_week,
                 date__lte=end_of_week
             ).select_related('jeu')
+            
+            
+            if not resultats.exists():
+                return Response({"message": "Pas encore de résultats", "data": []}, status=status.HTTP_200_OK)
+
+        
 
            # Organiser les résultats par jeu pour un accès rapide
             results_by_game = {}
