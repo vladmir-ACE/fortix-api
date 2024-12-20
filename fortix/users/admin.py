@@ -5,7 +5,7 @@ from .models import Country, Forcasseur, Parieur,User
 # Register your models here.
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('id', 'phone_number','username','password','first_name', 'last_name', 'is_forcasseur', 'is_parieur')
+    list_display = ('id', 'phone_number','username','password','first_name', 'last_name','avatar', 'is_forcasseur', 'is_parieur')
     search_fields = ('phone_number', 'first_name', 'last_name')  # Pour faciliter la recherche dans l'admin
     
 @admin.register(Parieur)

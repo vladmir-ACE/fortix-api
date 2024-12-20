@@ -269,6 +269,9 @@ class ClientPronosticsTodayView(APIView):
             current_datetime = now()
             current_day_en = current_datetime.strftime('%A').upper()  # Jour actuel en anglais
             current_day_fr = EN_TO_FR_DAYS.get(current_day_en)  # Traduire en français
+            
+            #heure actuelle 
+            current_time = current_datetime.time()
 
             if not current_day_fr:
                 return Response({"error": "Impossible de déterminer le jour actuel."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -288,7 +291,8 @@ class ClientPronosticsTodayView(APIView):
                 jeu__jour__nom=current_day_fr,  # Filtrer par jour
                 jeu__pays_id=pays_id,          # Filtrer par pays_id
                 date__gte=start_of_week,       # Date >= début de la semaine
-                date__lte=end_of_week          # Date <= fin de la semaine
+                date__lte=end_of_week ,         # Date <= fin de la semaine
+                jeu__heure__gte=current_time,   # Heure >= heure actuelle
             ).select_related('jeu', 'forcasseur').order_by('-created_at')  # Optimisation des requêtes
 
            # Sérialiser les pronostics
@@ -305,6 +309,9 @@ class ClientPronosticsByDay(APIView):
           
             # Obtenir la date actuelle
             current_datetime = now()
+            
+             #Obtenir l'heure actuelle
+            current_time = current_datetime.time()
            
             # Calculer le début et la fin de la semaine actuelle
             today = current_datetime.date()
@@ -320,7 +327,8 @@ class ClientPronosticsByDay(APIView):
                 jeu__jour_id=jour_id,  # Filtrer par jour
                 jeu__pays_id=pays_id,          # Filtrer par pays_id
                 date__gte=start_of_week,       # Date >= début de la semaine
-                date__lte=end_of_week          # Date <= fin de la semaine
+                date__lte=end_of_week ,         # Date <= fin de la semaine
+               # jeu__heure__gte=current_time,   # Heure >= heure actuelle
             ).select_related('jeu', 'forcasseur').order_by('-created_at')  # Optimisation des requêtes
 
            # Sérialiser les pronostics
@@ -330,13 +338,16 @@ class ClientPronosticsByDay(APIView):
         except:
             return Response({"message": "une erreur est survenue"}, status=status.HTTP_404_NOT_FOUND)
             
-#pronostic d'une journee quelconque de la semaine en cours 
+#pronostic d'une journee quelconque de la semaine en cours et du forcasseur selectionner 
 class ClientPronosticsByDayAndForcasseur(APIView):
     def get(self, request,jour_id, pays_id,user_id ):
         try:
           
             # Obtenir la date actuelle
             current_datetime = now()
+            
+            #Obtenir l'heure actuelle
+            current_time = current_datetime.time()
            
             # Calculer le début et la fin de la semaine actuelle
             today = current_datetime.date()
@@ -353,7 +364,8 @@ class ClientPronosticsByDayAndForcasseur(APIView):
                 forcasseur__user_id=user_id,  # Filtrer par forcasseur
                 jeu__pays_id=pays_id,          # Filtrer par pays_id
                 date__gte=start_of_week,       # Date >= début de la semaine
-                date__lte=end_of_week          # Date <= fin de la semaine
+                date__lte=end_of_week,          # Date <= fin de la semaine
+                jeu__heure__gte=current_time,  # Heure >= heure actuelle
             ).select_related('jeu', 'forcasseur').order_by('-created_at')  # Optimisation des requêtes
 
            # Sérialiser les pronostics

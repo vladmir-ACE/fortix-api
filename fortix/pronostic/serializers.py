@@ -70,10 +70,11 @@ class PronosticSerializer(serializers.ModelSerializer):
         except (Jeux.DoesNotExist, Forcasseur.DoesNotExist) as e:
             raise serializers.ValidationError(f"ID de jeu ou ID d'utilisateur invalide : {str(e)}")
 
-        # Récupérer le jour actuel et l'heure actuelle
+        # Récupérer le jour actuel et l'heure actuelle, la date actuelle
         current_datetime = now()
         current_day = current_datetime.strftime('%A').upper()  # Jour actuel en anglais (majuscule)
         current_time = current_datetime.time()
+        current_date = current_datetime.date()
 
         # Convertir le jour actuel en français
         current_day_fr = EN_TO_FR_DAYS.get(current_day)
@@ -90,11 +91,12 @@ class PronosticSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(f"Le jour du jeu ({jeu.jour.nom}) est déjà passé. Vous ne pouvez pas créer de pronostic.")
 
         # Vérification 2 : Si le jour est aujourd'hui, comparer l'heure
-        if current_day_index == jeu_day_index and current_time > jeu.heure:
-            raise serializers.ValidationError(
-                "L'heure du jeu est déjà passée pour aujourd'hui. Vous ne pouvez pas créer de pronostic."
-            )
-
+        if current_day_index == jeu_day_index:
+            jeu_heure_minus_30 = (datetime.combine(current_date, jeu.heure) - timedelta(minutes=30)).time()
+            if current_time > jeu_heure_minus_30:
+                raise serializers.ValidationError(
+                    "L'heure du jeu  est déjà passée pour aujourd'hui. Vous ne pouvez pas créer ce pronostic."
+                )
         # Vérification 3 : Pas de pronostic multiple pour le même jeu dans la semaine
         today = current_datetime.date()
         start_of_week = today - timedelta(days=today.weekday())  # Début de la semaine (lundi)
@@ -130,7 +132,7 @@ class PronosticSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'phone_number', 'country_id']
+        fields = ['id', 'first_name', 'last_name', 'avatar', 'phone_number', 'country_id']
 
 # Serializer pour l'objet Forcasseur, incluant les infos de l'objet User
 class ForcasseurSerializer(serializers.ModelSerializer):

@@ -36,10 +36,10 @@ def generate_payment_url(request, parieur_id):
         "amount": 100,  # Montant de l'abonnement, par ex. 100 XOF
         "currency": "XOF",
         "description": "Abonnement parieur",
-        "return_url": "https://876b-2c0f-f0f8-836-fd00-45c3-1f24-c978-96ce.ngrok-free.app/subscribe/payment-return/",  # URL de retour après paiement
-        "notify_url": "https://876b-2c0f-f0f8-836-fd00-45c3-1f24-c978-96ce.ngrok-free.app/subscribe/payment-notify/",  # URL de notification CinetPay
+        "return_url": "http://7166-196-171-23-224.ngrok-free.app/apiv1/subscribe/payment-return/",  # URL de retour après paiement
+        "notify_url": "http://7166-196-171-23-224.ngrok-free.app/apiv1/subscribe/payment-notify/",  # URL de notification CinetPay
         "customer_name": parieur.user.first_name,
-        "customer_surname": parieur.user.last_name,
+        "customer_surname": parieur.user.last_name, 
         "customer_email": "vladgnouyaro@gmail.com",
         "customer_phone_number": parieur.user.phone_number,
         "customer_address" : "BP 0024",
@@ -71,6 +71,7 @@ def generate_payment_url(request, parieur_id):
 
 @csrf_exempt
 def payment_notify(request):
+    print("start notify_url")
     if request.method == 'POST':
         data = request.json()
         transaction_id = data.get('transaction_id')
@@ -104,6 +105,7 @@ def payment_notify(request):
 
 
 def payment_return(request):
+    print("start return_url")
     status = request.GET.get('status')
     
     if status == "ACCEPTED":

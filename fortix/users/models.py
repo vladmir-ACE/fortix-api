@@ -20,6 +20,7 @@ class User(AbstractUser):
     country = models.ForeignKey(Country, on_delete=models.SET_NULL, null=True, blank=True)  # Relation avec la table Pays
     is_forcasseur = models.BooleanField(default=False)
     is_parieur = models.BooleanField(default=False)
+    avatar=models.CharField(max_length=255,null=True)
     
 
 

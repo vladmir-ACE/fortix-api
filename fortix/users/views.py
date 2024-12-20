@@ -1,5 +1,7 @@
 import logging
+import cloudinary
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -120,3 +122,48 @@ class ClassementForcasseur(APIView):
         except Exception as e:
             # En cas d'erreur, retourner un message d'erreur
             return Response({"message": f"Erreur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
+#UPDATE AVATAR DE L'UTILISATEUR
+        
+class UpdateUserAvatar(APIView):
+    def post(self, request):
+        # Récupérer l'utilisateur par l'ID fourni
+        user_id = request.data.get('user_id')
+        user = get_object_or_404(User, id=user_id)
+        
+        # Vérifier si un fichier a été envoyé
+        avatar_file = request.FILES.get('avatar')
+        if not avatar_file:
+            return Response(
+                {"message": "Aucune image fournie."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Envoyer l'image sur Cloudinary
+            upload_result = cloudinary.uploader.upload(avatar_file, folder="avatars/")
+            avatar_url = upload_result.get("secure_url")
+
+            if not avatar_url:
+                return Response(
+                    {"message": "Échec de l'upload sur Cloudinary."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+            # Mettre à jour l'utilisateur avec l'URL de l'avatar
+            user.avatar = avatar_url
+            user.save()
+
+            return Response(
+                {
+                    "message": "Avatar mis à jour avec succès.",
+                    "avatar_url": avatar_url,
+                },
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return Response(
+                {"message": f"Une erreur est survenue : {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
