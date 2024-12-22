@@ -101,7 +101,7 @@ class ListForcasseur(APIView):
         try:
             forcasseurs = Forcasseur.objects.all()
             serializer = ForcasseurSerializer(forcasseurs, many=True)
-            return Response({"message": "Success", "data": serializer.data}, status=status.HTTP_200_OK)
+            return Response({"message": "List forcasseur", "data": serializer.data}, status=status.HTTP_200_OK)
         except Exception as e:
             # Journalisation de l'erreur pour un meilleur suivi
             logger.error(f"Erreur lors de la récupération des forcasseurs : {str(e)}")
@@ -122,6 +122,23 @@ class ClassementForcasseur(APIView):
         except Exception as e:
             # En cas d'erreur, retourner un message d'erreur
             return Response({"message": f"Erreur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+#classement génerale
+        
+class ClassementGeneralForcasseur(APIView):
+    def get(self, request, *args, **kwargs):
+        try:
+            # Filtrer les forcasseurs en fonction de l'ID du pays
+            forcasseurs = Forcasseur.objects.all().order_by('-total_winnings')
+            # Sérialisation des données
+            serializer = ForcasseurSerializer(forcasseurs, many=True)
+            
+            # Retourner la réponse avec les données triées
+            return Response({"message": "Success", "data": serializer.data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            # En cas d'erreur, retourner un message d'erreur
+            return Response({"message": f"Erreur: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
         
         
 #UPDATE AVATAR DE L'UTILISATEUR

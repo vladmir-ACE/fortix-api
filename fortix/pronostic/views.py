@@ -293,7 +293,7 @@ class ClientPronosticsTodayView(APIView):
                 date__gte=start_of_week,       # Date >= début de la semaine
                 date__lte=end_of_week ,         # Date <= fin de la semaine
                 jeu__heure__gte=current_time,   # Heure >= heure actuelle
-            ).select_related('jeu', 'forcasseur').order_by('-created_at')  # Optimisation des requêtes
+            ).select_related('jeu', 'forcasseur').order_by('jeu__heure')  # Optimisation des requêtes
 
            # Sérialiser les pronostics
             serializer = ListPronosticSerializer(pronostics_today, many=True)
@@ -340,7 +340,7 @@ class ClientPronosticsByDay(APIView):
             
 #pronostic d'une journee quelconque de la semaine en cours et du forcasseur selectionner 
 class ClientPronosticsByDayAndForcasseur(APIView):
-    def get(self, request,jour_id, pays_id,user_id ):
+    def get(self, request, pays_id,user_id ):
         try:
           
             # Obtenir la date actuelle
@@ -348,6 +348,9 @@ class ClientPronosticsByDayAndForcasseur(APIView):
             
             #Obtenir l'heure actuelle
             current_time = current_datetime.time()
+               # Obtenir le jour actuel en français
+            current_day_en = current_datetime.strftime('%A').upper()  # Jour actuel en anglais
+            current_day_fr = EN_TO_FR_DAYS.get(current_day_en)  
            
             # Calculer le début et la fin de la semaine actuelle
             today = current_datetime.date()
@@ -360,13 +363,13 @@ class ClientPronosticsByDayAndForcasseur(APIView):
 
             # Filtrer les pronostics du jour actuel dans la semaine actuelle et par pays_id
             pronostics_today = Pronostic.objects.filter(               
-                jeu__jour_id=jour_id,  # Filtrer par jour
+                jeu__jour__nom=current_day_fr,  # Filtrer par jour
                 forcasseur__user_id=user_id,  # Filtrer par forcasseur
                 jeu__pays_id=pays_id,          # Filtrer par pays_id
                 date__gte=start_of_week,       # Date >= début de la semaine
                 date__lte=end_of_week,          # Date <= fin de la semaine
                 jeu__heure__gte=current_time,  # Heure >= heure actuelle
-            ).select_related('jeu', 'forcasseur').order_by('-created_at')  # Optimisation des requêtes
+            ).select_related('jeu', 'forcasseur').order_by('jeu__heure')  # Optimisation des requêtes
 
            # Sérialiser les pronostics
             serializer = ListPronosticSerializer(pronostics_today, many=True)
@@ -397,12 +400,12 @@ class AddResultatView(APIView):
 
                 # Construire une requête GET interne pour WinningPronostics
                 internal_request = factory.get(
-                    reverse('list_prono_gagnants', kwargs={'jour_id': jour_id, 'pays_id': pays_id})
+                    reverse('list_prono_gagnants', kwargs={ 'pays_id': pays_id})
                 )
 
                 # Instancier la vue WinningPronostics et appeler la méthode GET
                 winning_pronostics_view = WinningPronostics.as_view()
-                response = winning_pronostics_view(internal_request, jour_id=jour_id, pays_id=pays_id)
+                response = winning_pronostics_view(internal_request, pays_id=pays_id)
 
                 # Vérifier le statut de la réponse
                 if response.status_code != 200:
@@ -461,11 +464,15 @@ class AddResultatView(APIView):
 ##list by days and country
 
 class ResultatsByDay(APIView):
-    def get(self, request,jour_id, pays_id ):
+    def get(self, request, pays_id ):
         try:
           
-            # Obtenir la date actuelle
+            # Obtenir la date  et le jour actuelle
             current_datetime = now()
+             # Obtenir le jour actuel en français
+            current_day_en = current_datetime.strftime('%A').upper()  # Jour actuel en anglais
+            current_day_fr = EN_TO_FR_DAYS.get(current_day_en)  # Traduire en français
+            
            
             # Calculer le début et la fin de la semaine actuelle
             today = current_datetime.date()
@@ -478,7 +485,7 @@ class ResultatsByDay(APIView):
 
             # Filtrer les pronostics du jour actuel dans la semaine actuelle et par pays_id
             resulats_today = Resultat.objects.filter(
-                jeu__jour_id=jour_id,  # Filtrer par jour
+                jeu__jour__nom=current_day_fr,  # Filtrer par jour
                 jeu__pays_id=pays_id,          # Filtrer par pays_id
                 date__gte=start_of_week,       # Date >= début de la semaine
                 date__lte=end_of_week          # Date <= fin de la semaine
@@ -543,13 +550,18 @@ class DeleteResultatView(APIView):
 
 ## pronostics gagnants 
 class WinningPronostics(APIView):
-    def get(self, request, jour_id, pays_id):
+    def get(self, request, pays_id):
         try:
             # Obtenir la date actuelle et les limites de la semaine
             current_datetime = now()
             today = current_datetime.date()
             start_of_week = today - timedelta(days=today.weekday())
             end_of_week = start_of_week + timedelta(days=6)
+            
+             # Obtenir le jour actuel en français
+            current_day_en = current_datetime.strftime('%A').upper()  # Jour actuel en anglais
+            current_day_fr = EN_TO_FR_DAYS.get(current_day_en)  # Traduire en français
+            
 
             # Vérification du paramètre pays_id
             if not pays_id:
@@ -557,7 +569,7 @@ class WinningPronostics(APIView):
 
             # Récupération des résultats filtrés
             resultats = Resultat.objects.filter(
-                jeu__jour_id=jour_id,
+                jeu__jour__nom=current_day_fr,
                 jeu__pays_id=pays_id,
                 date__gte=start_of_week,
                 date__lte=end_of_week
@@ -580,7 +592,7 @@ class WinningPronostics(APIView):
 
             # Récupération des pronostics et filtrage en fonction des résultats
             pronostics = Pronostic.objects.filter(
-                jeu__jour_id=jour_id,
+                jeu__jour__nom=current_day_fr,
                 jeu__pays_id=pays_id,
                 date__gte=start_of_week,
                 date__lte=end_of_week
