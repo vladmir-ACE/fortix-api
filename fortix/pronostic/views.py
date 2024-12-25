@@ -462,6 +462,40 @@ class AddResultatView(APIView):
     
 
 ##list by days and country
+#1-list by just country
+class ResultatsByDayCountry(APIView):
+    def get(self, request,jour_id, pays_id ):
+        try:
+          
+            # Obtenir la date  et le jour actuelle
+            current_datetime = now()
+            
+           
+            # Calculer le début et la fin de la semaine actuelle
+            today = current_datetime.date()
+            start_of_week = today - timedelta(days=today.weekday())  # Début de la semaine (lundi)
+            end_of_week = start_of_week + timedelta(days=6)  # Fin de la semaine (dimanche)
+
+            # Vérifier si pays_id est fourni
+            if not pays_id:
+                return Response({"error": "Le paramètre pays_id est requis."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Filtrer les pronostics du jour actuel dans la semaine actuelle et par pays_id
+            resulats_today = Resultat.objects.filter(
+                jeu__jour_id=jour_id,  # Filtrer par jour
+                jeu__pays_id=pays_id,          # Filtrer par pays_id
+                date__gte=start_of_week,       # Date >= début de la semaine
+                date__lte=end_of_week          # Date <= fin de la semaine
+            ).select_related('jeu').order_by('-created_at')  # Optimisation des requêtes
+
+            print(resulats_today)
+           # Sérialiser les pronostics
+            serializer = ListResultatSerializer(resulats_today, many=True)
+            
+            return Response({"message": "Liste des resulats", "data": serializer.data}, status=status.HTTP_200_OK)
+        except:
+            return Response({"message": "une erreur est survenue"}, status=status.HTTP_404_NOT_FOUND)
+#2-list by days and country 
 
 class ResultatsByDay(APIView):
     def get(self, request, pays_id ):
