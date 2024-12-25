@@ -89,24 +89,24 @@ WSGI_APPLICATION = 'fortix.wsgi.application'
 DATABASES = {
     
     #prod
-        # 'default': {
-        #     'ENGINE': 'django.db.backends.postgresql',
-        #     'NAME': os.environ.get('DB_NAME'),  # Remplace par le nom de ta base de données MySQL
-        #     'USER':  os.environ.get('DB_USER'),            # Remplace par ton nom d'utilisateur MySQL
-        #     'PASSWORD':os.environ.get('DB_PASSWORD'),           # Remplace par ton mot de passe MySQL
-        #     'HOST': os.environ.get('DB_HOST'),                 # Habituellement 'localhost' ou l'adresse IP du serveur MySQL
-        #     'PORT': os.environ.get('DB_PORT'), # Habituellement 3306 pour MySQL
-            
-        # }
-    #local 
         'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'fortix',
-        'USER': 'root',  # Utiliser les valeurs définies dans le fichier .env
-        'PASSWORD': '',
-        'HOST': 'localhost',  # Utiliser 'db' au lieu de 'localhost'
-        'PORT': '3306', 
-    }
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME'),  # Remplace par le nom de ta base de données MySQL
+            'USER':  os.environ.get('DB_USER'),            # Remplace par ton nom d'utilisateur MySQL
+            'PASSWORD':os.environ.get('DB_PASSWORD'),           # Remplace par ton mot de passe MySQL
+            'HOST': os.environ.get('DB_HOST'),                 # Habituellement 'localhost' ou l'adresse IP du serveur MySQL
+            'PORT': os.environ.get('DB_PORT'), # Habituellement 3306 pour MySQL
+            
+        }
+    #local 
+    #     'default': {
+    #     'ENGINE': 'django.db.backends.mysql',
+    #     'NAME': 'fortix',
+    #     'USER': 'root',  # Utiliser les valeurs définies dans le fichier .env
+    #     'PASSWORD': '',
+    #     'HOST': 'localhost',  # Utiliser 'db' au lieu de 'localhost'
+    #     'PORT': '3306', 
+    # }
     
     }
 
