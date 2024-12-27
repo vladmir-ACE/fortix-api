@@ -400,12 +400,12 @@ class AddResultatView(APIView):
 
                 # Construire une requête GET interne pour WinningPronostics
                 internal_request = factory.get(
-                    reverse('list_prono_gagnants', kwargs={ 'pays_id': pays_id})
+                    reverse('list_prono_gagnants_jours', kwargs={'jour_id': jour_id, 'pays_id': pays_id})
                 )
 
                 # Instancier la vue WinningPronostics et appeler la méthode GET
-                winning_pronostics_view = WinningPronostics.as_view()
-                response = winning_pronostics_view(internal_request, pays_id=pays_id)
+                winning_pronostics_view = WinningPronosticsByDays.as_view()
+                response = winning_pronostics_view(internal_request,jour_id=jour_id, pays_id=pays_id)
 
                 # Vérifier le statut de la réponse
                 if response.status_code != 200:
@@ -649,15 +649,15 @@ class WinningPronostics(APIView):
         """
         Vérifie si le pronostic correspond à l'un des résultats disponibles.
         """
-        banka = set(pronostic.banka.split('-')) if pronostic.banka else set()
-        two = set(pronostic.two.split('-')) if pronostic.two else set()
-        perm = set(pronostic.perm.split('-')) if pronostic.perm else set()
+        banka = set(map(int, pronostic.banka.split('-'))) if pronostic.banka else set()
+        two = set(map(int, pronostic.two.split('-'))) if pronostic.two else set()
+        perm = set(map(int, pronostic.perm.split('-'))) if pronostic.perm else set()
 
         for result in results:
             if result['type'] == 'SIMPLE':
-                result_numbers = set(result['numbers'].split('-'))
+                result_numbers = set(map(int, result['numbers'].split('-')))
             elif result['type'] == 'DOUBLE':
-                result_numbers = set(result['win'].split('-')) | set(result['mac'].split('-'))
+                result_numbers = set(map(int, result['win'].split('-'))) | set(map(int, result['mac'].split('-')))
             else:
                 continue
 
@@ -666,6 +666,85 @@ class WinningPronostics(APIView):
                 return True
         return False
 
+
+class WinningPronosticsByDays(APIView):
+    def get(self, request,jour_id, pays_id):
+        try:
+            # Obtenir la date actuelle et les limites de la semaine
+            current_datetime = now()
+            today = current_datetime.date()
+            start_of_week = today - timedelta(days=today.weekday())
+            end_of_week = start_of_week + timedelta(days=6)
+            
+
+            # Vérification du paramètre pays_id
+            if not pays_id:
+                return Response({"error": "Le paramètre pays_id est requis."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Récupération des résultats filtrés
+            resultats = Resultat.objects.filter(
+                jeu__jour_id=jour_id,
+                jeu__pays_id=pays_id,
+                date__gte=start_of_week,
+                date__lte=end_of_week
+            ).select_related('jeu')
+            
+            if not resultats.exists():
+                return Response({"message": "Pas encore de résultats", "data": []}, status=status.HTTP_200_OK)
+
+            # Organisation des résultats par jeu
+            results_by_game = {}
+            for result in resultats:
+                if result.jeu.id not in results_by_game:
+                    results_by_game[result.jeu.id] = []
+                results_by_game[result.jeu.id].append({
+                    'type': result.type,
+                    'numbers': result.numbers,
+                    'win': result.win,
+                    'mac': result.mac
+                })
+
+            # Récupération des pronostics et filtrage en fonction des résultats
+            pronostics = Pronostic.objects.filter(
+                jeu__jour_id=jour_id,
+                jeu__pays_id=pays_id,
+                date__gte=start_of_week,
+                date__lte=end_of_week
+            ).select_related('jeu', 'forcasseur')
+
+            filtered_pronostics = []
+            for pronostic in pronostics:
+                matching_results = results_by_game.get(pronostic.jeu.id, [])
+                if self.has_winning_numbers(pronostic, matching_results):
+                    filtered_pronostics.append(pronostic)
+
+            # Sérialisation des pronostics filtrés
+            serializer = PronosticGagnantSerializer(filtered_pronostics, many=True, context={'results': results_by_game})
+            return Response({"message": "Pronostics gagnants", "data": serializer.data}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"message": "Une erreur est survenue", "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def has_winning_numbers(self, pronostic, results):
+        """
+        Vérifie si le pronostic correspond à l'un des résultats disponibles.
+        """
+        banka = set(map(int, pronostic.banka.split('-'))) if pronostic.banka else set()
+        two = set(map(int, pronostic.two.split('-'))) if pronostic.two else set()
+        perm = set(map(int, pronostic.perm.split('-'))) if pronostic.perm else set()
+
+        for result in results:
+            if result['type'] == 'SIMPLE':
+                result_numbers = set(map(int, result['numbers'].split('-')))
+            elif result['type'] == 'DOUBLE':
+                result_numbers = set(map(int, result['win'].split('-'))) | set(map(int, result['mac'].split('-')))
+            else:
+                continue
+
+            # Vérifiez si au moins une correspondance existe
+            if (banka & result_numbers) or (two & result_numbers) or (perm & result_numbers):
+                return True
+        return False
         
 ### STATISTIQUES 
 ##NBR DE PRONOSTIC D'UN FORCASSEUR 

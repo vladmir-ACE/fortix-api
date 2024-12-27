@@ -244,23 +244,23 @@ class PronosticGagnantSerializer(serializers.ModelSerializer):
 
         for result in results:
             if result['type'] == 'SIMPLE':
-                result_numbers = set(result['numbers'].split('-'))
+                result_numbers = set(map(int, result['numbers'].split('-')))
             elif result['type'] == 'DOUBLE':
-                result_numbers = set(result['win'].split('-')) | set(result['mac'].split('-'))
+                result_numbers = set(map(int, result['win'].split('-'))) | set(map(int, result['mac'].split('-')))
             else:
                 continue
 
             # Vérifiez les correspondances
-            banka = set(obj.banka.split('-')) if obj.banka else set()
-            two = set(obj.two.split('-')) if obj.two else set()
-            perm = set(obj.perm.split('-')) if obj.perm else set()
+            banka = set(map(int, obj.banka.split('-'))) if obj.banka else set()
+            two = set(map(int, obj.two.split('-'))) if obj.two else set()
+            perm = set(map(int, obj.perm.split('-'))) if obj.perm else set()
 
             winning_numbers |= (banka & result_numbers)
             winning_numbers |= (two & result_numbers)
             winning_numbers |= (perm & result_numbers)
 
         # Retourner les numéros gagnants formatés avec "-"
-        return '-'.join(sorted(winning_numbers))
+        return '-'.join(map(str, sorted(winning_numbers)))
     
     def get_score(self, obj):
         # Récupérer les résultats associés au jeu du pronostic
@@ -271,15 +271,15 @@ class PronosticGagnantSerializer(serializers.ModelSerializer):
 
         for result in results:
             if result['type'] == 'SIMPLE':
-                result_numbers = set(result['numbers'].split('-'))
+                result_numbers = set(map(int, result['numbers'].split('-')))
             elif result['type'] == 'DOUBLE':
-                result_numbers = set(result['win'].split('-')) | set(result['mac'].split('-'))
+                result_numbers = set(map(int, result['win'].split('-'))) | set(map(int, result['mac'].split('-')))
             else:
                 continue
 
             # Vérifiez les correspondances
-            banka = set(obj.banka.split('-')) if obj.banka else set()
-            two = set(obj.two.split('-')) if obj.two else set()
+            banka = set(map(int, obj.banka.split('-'))) if obj.banka else set()
+            two = set(map(int, obj.two.split('-'))) if obj.two else set()
 
             # Marquer comme trouvé si correspondance avec les résultats
             if banka & result_numbers:
