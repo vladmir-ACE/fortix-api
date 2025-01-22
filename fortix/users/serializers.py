@@ -1,7 +1,9 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import Country, Parieur, Forcasseur
+
+from commercial.models import Portefeuille
+from .models import Country, Parieur, Forcasseur,Commercial
 
 User = get_user_model()
 
@@ -84,14 +86,87 @@ class LoginSerializer(serializers.Serializer):
 
 
 # user serializers 
-
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'phone_number', 'country_id' , 'avatar','first_name', 'last_name', 'username', 'is_forcasseur', 'is_parieur']
         
+#user serializer for dashboard
+class DashUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'phone_number', 'country_id' , 'avatar','first_name', 'last_name', 'username', 'is_commercial','is_dashadmin']
+        
+
+
 class ForcasseurSerializer(serializers.ModelSerializer):
     user=UserSerializer()
     class Meta:
         model=Forcasseur
         fields =['id','user','total_winnings','success_rate']
+        
+        
+# register commercial serializer 
+class RegisterComercialSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+    country_id = serializers.IntegerField(write_only=True, required=False)  # Ajout du champ country_id
+    email=serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['phone_number', 'first_name', 'last_name', 'password', 'is_commercial', 'is_forcasseur', 'is_parieur', 'country_id','username','email']
+
+    def create(self, validated_data):
+        # Récupérer le country_id depuis les données de la requête
+        country_id = validated_data.pop('country_id', None)
+        country_obj = None
+        
+        # Si un ID de pays est fourni, on essaie de récupérer l'objet correspondant
+        if country_id:
+            try:
+                country_obj = Country.objects.get(id=country_id)
+            except Country.DoesNotExist:
+                raise serializers.ValidationError("Invalid country ID")
+
+        # Créer l'utilisateur
+        user = User.objects.create_user(
+            phone_number=validated_data['phone_number'],
+            first_name=validated_data['first_name'],
+            last_name=validated_data['last_name'],
+            password=validated_data['password'],
+            is_forcasseur=validated_data['is_forcasseur'],
+            is_parieur=validated_data['is_parieur'],
+            country=country_obj  ,# Associer le pays à l'utilisateur
+            username=validated_data['username'],
+            is_commercial=validated_data['is_commercial']
+        )
+
+        # Créer un profil Parieur ou Forcasseur selon le rôle de l'utilisateur
+        if user.is_commercial:
+            commercial=Commercial.objects.create(user=user,email=validated_data['email'])
+            Portefeuille.objects.create(commercial=commercial,montant=0.0)
+       
+        return user  
+    
+    def get_tokens(self, user):
+        refresh = RefreshToken.for_user(user)
+        return {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+        }
+
+
+#Serializer  to get forca and parieur with all info in dashboard 
+
+class DashForcasseurSerializer(serializers.ModelSerializer):
+    user=UserSerializer()
+    class Meta:
+        model=Forcasseur
+        fields =['id','user','subscription_start_date','subscription_end_date']
+        
+class DashParieurSerializer(serializers.ModelSerializer):
+    user=UserSerializer()
+    class Meta:
+        model=Parieur
+        fields =['id','user','subscription_start_date','subscription_end_date']
+        

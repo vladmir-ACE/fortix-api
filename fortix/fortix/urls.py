@@ -22,6 +22,8 @@ from drf_yasg import openapi
 from django.conf import settings
 from django.conf.urls.static import static
 
+from .views import AppVersion
+
 schema_view = get_schema_view(
     openapi.Info(
         title="API Documentation",
@@ -35,9 +37,11 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('swager/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    path('apiv1/user/', include('users.urls')),
-    path('apiv1/subscribe/', include('subscription.urls')),
-    path('apiv1/pronostic/', include('pronostic.urls')),
+    path('apiv2/version/',AppVersion.as_view()),
+    path('apiv2/user/', include('users.urls')),
+    path('apiv2/subscribe/', include('subscription.urls')),
+    path('apiv2/pronostic/', include('pronostic.urls')),
+    path('apiv2/commercial/', include('commercial.urls')),
 ]\
 + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)\
 + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

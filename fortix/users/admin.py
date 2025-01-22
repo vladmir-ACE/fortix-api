@@ -1,11 +1,11 @@
 from django.contrib import admin
 
-from .models import Country, Forcasseur, Parieur,User
+from .models import Country, Forcasseur, Parieur,User,Commercial
 
 # Register your models here.
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('id', 'phone_number','username','password','first_name', 'last_name','avatar', 'is_forcasseur', 'is_parieur')
+    list_display = ('id', 'phone_number','username','password','first_name', 'last_name','avatar', 'is_forcasseur', 'is_parieur','is_commercial','is_dashadmin')
     search_fields = ('phone_number', 'first_name', 'last_name')  # Pour faciliter la recherche dans l'admin
     
 @admin.register(Parieur)
@@ -25,3 +25,7 @@ class CountryAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 
+@admin.register(Commercial)
+class CommercialAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user','email')
+    search_fields = ('user__first_name', 'user__phone_number')

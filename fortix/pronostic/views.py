@@ -14,6 +14,10 @@ from rest_framework import serializers
 from datetime import timedelta
 from django.utils.timezone import now
 
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+from django.db.models import F
 
 
 
@@ -293,7 +297,9 @@ class ClientPronosticsTodayView(APIView):
                 date__gte=start_of_week,       # Date >= début de la semaine
                 date__lte=end_of_week ,         # Date <= fin de la semaine
                 jeu__heure__gte=current_time,   # Heure >= heure actuelle
-            ).select_related('jeu', 'forcasseur').order_by('jeu__heure')  # Optimisation des requêtes
+            ).select_related('jeu', 'forcasseur').annotate(
+    forcasseur_total_winnings=F('forcasseur__total_winnings')  # Annoter les gains totaux
+).order_by('jeu__heure', '-forcasseur_total_winnings')  # Trier par heure puis gains totaux décroissants
 
            # Sérialiser les pronostics
             serializer = ListPronosticSerializer(pronostics_today, many=True)
@@ -383,6 +389,8 @@ class ClientPronosticsByDayAndForcasseur(APIView):
 #PARIE ADMIN POUR LES RESULTATS
 ## add
 class AddResultatView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
     def post(self, request, *args, **kwargs):
         serializer = AddResultatSerializer(data=request.data)
 
@@ -535,6 +543,8 @@ class ResultatsByDay(APIView):
        
 ## update 
 class UpdateResultat(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
     def put(self, request, resultat_id):
         try:
             # Récupération du resultat à modifier
@@ -563,6 +573,8 @@ class UpdateResultat(APIView):
         
 ##delete resultat
 class DeleteResultatView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
     def delete(self, request, resultat_id):
         try:
             # Récupérer le pronostic à supprimer

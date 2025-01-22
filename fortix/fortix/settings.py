@@ -14,6 +14,7 @@ from pathlib import Path
 import os, dotenv
 import cloudinary
 import cloudinary.uploader
+from datetime import timedelta
 # dotenv.load_dotenv()
 
 
@@ -46,6 +47,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'users',
     'subscription',
+    'commercial',
     'pronostic',
     'drf_yasg',
     'corsheaders',
@@ -99,13 +101,13 @@ DATABASES = {
             
         }
     #local 
-    #     'default': {
-    #     'ENGINE': 'django.db.backends.mysql',
-    #     'NAME': 'fortix',
-    #     'USER': 'root',  # Utiliser les valeurs définies dans le fichier .env
-    #     'PASSWORD': '',
-    #     'HOST': 'localhost',  # Utiliser 'db' au lieu de 'localhost'
-    #     'PORT': '3306', 
+        # 'default': {
+        # 'ENGINE': 'django.db.backends.mysql',
+        # 'NAME': 'fortix',
+        # 'USER': 'root',  # Utiliser les valeurs définies dans le fichier .env
+        # 'PASSWORD': '',
+        # 'HOST': 'localhost',  # Utiliser 'db' au lieu de 'localhost'
+        # 'PORT': '3306', 
     # }
     
     }
@@ -166,16 +168,20 @@ REST_FRAMEWORK = {
 }
 
 AUTH_USER_MODEL='users.User'
+
+#cinet pay config 
 CINETPAY_API_KEY = '66451452366fc28f4aeb735.51671120'
 CINETPAY_SITE_ID = '5880827'
 
+
+#CRSF config
 CSRF_TRUSTED_ORIGINS = [
     'https://forti-x.com'
 ]
 
 
 ALLOWED_HOSTS = ['*']
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = True  
 
 #Cloudniray config  
 cloudinary.config( 
@@ -183,3 +189,27 @@ cloudinary.config(
     api_key = "855576267278711", 
     api_secret = "AxyyYKFnROKaNTdphu0hIg1hCFY"
 )
+
+GLOBAL_APP_VERSION='1.0.0'
+
+#JWT config
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=365 * 100),  # 100 ans, par exemple
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=365 * 100),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': False,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+}
+
+
+
+
+
+
