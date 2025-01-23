@@ -15,7 +15,7 @@ class ParieurAdmin(admin.ModelAdmin):
     
 @admin.register(Forcasseur)
 class ForcasseurAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'total_winnings', 'success_rate')
+    list_display = ('id', 'user', 'total_winnings', 'success_rate','subscription_active', 'subscription_start_date', 'subscription_end_date')
     search_fields = ('user__first_name', 'user__phone_number')
 
 
