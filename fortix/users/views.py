@@ -260,7 +260,7 @@ class RegisterCommercialView(APIView):
         }, status=status.HTTP_400_BAD_REQUEST)
 
 class RegisterCommByUserId(APIView):
-     def get(request,user_id, *args, **kwargs):
+     def get(self,request,user_id):
         user = get_object_or_404(User, id=user_id)
         user.is_commercial=True
         user.save()
