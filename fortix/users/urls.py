@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import ClassementForcasseur, ClassementGeneralForcasseur, DashLoginView, RegisterView, LoginView,ListForcasseur, SubscriptionCheck, UpdateUserAvatar,RegisterCommercialView, UserInfoView
+from .views import ClassementForcasseur, ClassementGeneralForcasseur, DashLoginView, RegisterCommByUserId, RegisterView, LoginView,ListForcasseur, SubscriptionCheck, UpdateUserAvatar,RegisterCommercialView, UserInfoView
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
@@ -11,6 +11,8 @@ urlpatterns = [
     
     #commercial register 
     path('register/commercial/', RegisterCommercialView.as_view(), name='register_for_commercial'),
+
+    path('register/commercial/<int:user_id>', RegisterCommByUserId.as_view(), name='register_for_commercial_byId'),
     
     #dashboard login 
     path('dashboard/login/', DashLoginView.as_view(), name='dash_login'),
