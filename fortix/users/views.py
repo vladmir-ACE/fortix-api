@@ -2,12 +2,13 @@ import logging
 import cloudinary
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from commercial.models import Portefeuille
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 
-from .models import Forcasseur, Parieur, User
+from .models import Commercial, Forcasseur, Parieur, User
 from .serializers import DashForcasseurSerializer, DashParieurSerializer, DashUserSerializer, ForcasseurSerializer, RegisterSerializer, LoginSerializer, UserSerializer,RegisterComercialSerializer
 from drf_yasg.utils import swagger_auto_schema
 
@@ -257,6 +258,21 @@ class RegisterCommercialView(APIView):
             'error': 'Validation failed',
             'details': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
+
+class RegisterCommByUserId(APIView):
+     def get(request,user_id, *args, **kwargs):
+        user = get_object_or_404(User, id=user_id)
+        user.is_commercial=True
+        user.save()
+
+        commercial=Commercial.objects.create(user=user,email="test@gmail.com")
+        Portefeuille.objects.create(commercial=commercial,montant=0.0)
+
+        return Response({
+                    'message': 'Commercial  sucess create  successfully',
+                }, status=status.HTTP_200_OK)
+
+
 
 
 ## dashboard login
