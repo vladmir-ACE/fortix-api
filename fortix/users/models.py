@@ -23,7 +23,7 @@ class User(AbstractUser):
     is_commercial = models.BooleanField(default=False)
     is_dashadmin = models.BooleanField(default=False)
     
-    avatar=models.CharField(max_length=255,null=True)
+    avatar=models.CharField(max_length=255,null=True,blank=True)
     
 
 
@@ -74,7 +74,7 @@ class Forcasseur(models.Model):
 
 class Commercial(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    email = models.CharField(max_length=25, unique=True)
+    email = models.CharField(max_length=25, unique=True,blank=True)
     
     def __str__(self):
         return self.user.phone_number + " " + self.email
