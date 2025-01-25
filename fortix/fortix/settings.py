@@ -190,7 +190,7 @@ cloudinary.config(
     api_secret = "AxyyYKFnROKaNTdphu0hIg1hCFY"
 )
 
-GLOBAL_APP_VERSION='1.0.0'
+GLOBAL_APP_VERSION='1.1.0'
 
 #JWT config
 SIMPLE_JWT = {
