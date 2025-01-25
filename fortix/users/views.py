@@ -265,7 +265,7 @@ class RegisterCommByUserId(APIView):
         user.is_commercial=True
         user.save()
 
-        commercial=Commercial.objects.create(user=user,email="test@gmail.com")
+        commercial=Commercial.objects.create(user=user)
         Portefeuille.objects.create(commercial=commercial,montant=0.0)
 
         return Response({
